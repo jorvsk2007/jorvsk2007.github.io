@@ -71,25 +71,85 @@
                 <tbody></tbody>
             </table>
         </div>
+
+        <div id="proveedores" class="section">
+    <h2>Gestión de Proveedores</h2>
+    <div class="form-group">
+        <input id="prov_mat" placeholder="Matrícula">
+        <input id="prov_nom" placeholder="Nombre">
+        <input id="prov_marca" placeholder="Marca">
+        <input id="prov_tel" placeholder="Teléfono">
+    </div>
+    <button class="action" onclick="guardarProveedor()">Guardar Proveedor</button>
+    <table id="tabla-proveedores">
+        <thead><tr><th>Matrícula</th><th>Nombre</th><th>Marca</th><th>Teléfono</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<div id="ventas" class="section">
+    <h2>Registro de Ventas</h2>
+    <div class="form-group">
+        <input id="v_id" placeholder="ID Venta">
+        <input id="v_total" type="number" placeholder="Total">
+        <input id="v_rfc" placeholder="RFC Trabajador">
+    </div>
+    <button class="action" onclick="guardarVenta()">Registrar Venta</button>
+    <table id="tabla-ventas">
+        <thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Vendedor</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<div id="detalle" class="section">
+    <h2>Detalle de Venta</h2>
+    <div class="form-group">
+        <input id="d_venta" placeholder="ID Venta">
+        <input id="d_prod" placeholder="ID Producto">
+        <input id="d_cant" type="number" placeholder="Cantidad">
+        <input id="d_sub" type="number" placeholder="Subtotal">
+    </div>
+    <button class="action" onclick="guardarDetalle()">Agregar Detalle</button>
+    <table id="tabla-detalle">
+        <thead><tr><th>ID</th><th>Venta</th><th>Producto</th><th>Cant.</th><th>Subtotal</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
         
         </div>
 </div>
 
 <script>
-    // 2. CONFIGURACIÓN DE SUPABASE (Reemplaza con tus credenciales)
-    const SUPABASE_URL = 'https://Practica 3.1.supabase.co';
+    // 1. CONFIGURACIÓN DE SUPABASE
+    const SUPABASE_URL = 'https://kxnxjxiwcbypudikbais.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4bnhqeGl3Y2J5cHVkaWtiYWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxOTAwNzUsImV4cCI6MjA4ODc2NjA3NX0.5O7Wlzz3XRRlWky9LNPtu2-xbznBYOmC0lmBWgbArCs';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Navegación simple
-    function mostrar(seccion){
+    // 2. NAVEGACIÓN Y CARGA AUTOMÁTICA
+    function mostrar(seccion) {
         document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-        document.getElementById(seccion).classList.add("active");
+        const seccionActiva = document.getElementById(seccion);
+        if(seccionActiva) {
+            seccionActiva.classList.add("active");
+        }
+
+        const configuracionTablas = {
+            'productos': { tablaBD: 'producto', idHtml: 'tabla-productos', columnas: ['id_producto', 'nombre', 'precio', 'cant_exist'] },
+            'trabajadores': { tablaBD: 'trabajadores', idHtml: 'tabla-trabajadores', columnas: ['rfc', 'nombre', 'apellidos', 'rol'] },
+            'proveedores': { tablaBD: 'provedores', idHtml: 'tabla-proveedores', columnas: ['matricula', 'nombre', 'marca', 'telefono'] },
+            'ventas': { tablaBD: 'ventas', idHtml: 'tabla-ventas', columnas: ['id_venta', 'fecha', 'precio_total', 'rfc_trabajador'] },
+            'detalle': { tablaBD: 'detalle_venta', idHtml: 'tabla-detalle', columnas: ['id_detalle', 'id_venta', 'id_producto', 'cantidad', 'subtotal'] }
+        };
+
+        const config = configuracionTablas[seccion];
+        if (config) {
+            cargarDatos(config.tablaBD, config.idHtml, config.columnas);
+        }
     }
 
-    // 3. FUNCIÓN PARA GUARDAR PRODUCTO
+    // 3. FUNCIONES DE GUARDADO (CRUD - CREATE)
     async function guardarProducto() {
-        const prod = {
+        const datos = {
             id_producto: document.getElementById('p_id').value,
             nombre: document.getElementById('p_nombre').value,
             descripcion: document.getElementById('p_desc').value,
@@ -97,36 +157,87 @@
             cant_exist: parseInt(document.getElementById('p_stock').value),
             matricula_proveedor: document.getElementById('p_prov').value
         };
-
-        const { data, error } = await _supabase
-            .from('producto')
-            .insert([prod]);
-
-        if (error) {
-            alert("Error: " + error.message);
-        } else {
-            alert("Producto guardado exitosamente!");
-            // Aquí podrías llamar a una función para limpiar los inputs
-        }
+        insertarDato('producto', datos, 'productos');
     }
 
-    // 4. FUNCIÓN PARA GUARDAR TRABAJADOR
     async function guardarTrabajador() {
-        const tra = {
+        const datos = {
             rfc: document.getElementById('t_rfc').value,
             curp_tra: document.getElementById('t_curp').value,
             nombre: document.getElementById('t_nombre').value,
             apellidos: document.getElementById('t_apellidos').value,
             rol: document.getElementById('t_rol').value
         };
-
-        const { data, error } = await _supabase
-            .from('trabajadores')
-            .insert([tra]);
-
-        if (error) alert("Error: " + error.message);
-        else alert("Trabajador registrado!");
+        insertarDato('trabajadores', datos, 'trabajadores');
     }
+
+    async function guardarProveedor() {
+        const datos = {
+            matricula: document.getElementById('prov_mat').value,
+            nombre: document.getElementById('prov_nom').value,
+            marca: document.getElementById('prov_marca').value,
+            telefono: document.getElementById('prov_tel').value
+        };
+        insertarDato('provedores', datos, 'proveedores');
+    }
+
+    async function guardarVenta() {
+        const datos = {
+            id_venta: document.getElementById('v_id').value,
+            precio_total: parseFloat(document.getElementById('v_total').value),
+            rfc_trabajador: document.getElementById('v_rfc').value
+        };
+        insertarDato('ventas', datos, 'ventas');
+    }
+
+    async function guardarDetalle() {
+        const datos = {
+            id_venta: document.getElementById('d_venta').value,
+            id_producto: document.getElementById('d_prod').value,
+            cantidad: parseInt(document.getElementById('d_cant').value),
+            subtotal: parseFloat(document.getElementById('d_sub').value)
+        };
+        insertarDato('detalle_venta', datos, 'detalle');
+    }
+
+    // Función auxiliar para insertar y refrescar
+    async function insertarDato(tabla, objeto, seccion) {
+        const { error } = await _supabase.from(tabla).insert([objeto]);
+        if (error) {
+            alert("Error: " + error.message);
+        } else {
+            alert("Registro guardado con éxito");
+            limpiarInputs();
+            mostrar(seccion); // Recarga la tabla
+        }
+    }
+
+    // 4. FUNCIONES DE LECTURA (CRUD - READ)
+    async function cargarDatos(nombreTabla, idTablaHtml, columnas) {
+        const { data, error } = await _supabase.from(nombreTabla).select('*');
+        if (error) {
+            console.error("Error:", error.message);
+            return;
+        }
+        const tbody = document.querySelector(`#${idTablaHtml} tbody`);
+        tbody.innerHTML = ""; 
+        data.forEach(fila => {
+            const tr = document.createElement('tr');
+            columnas.forEach(col => {
+                const td = document.createElement('td');
+                td.textContent = fila[col] || '';
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+    }
+
+    function limpiarInputs() {
+        document.querySelectorAll('input').forEach(input => input.value = "");
+    }
+
+    // Cargar productos por defecto al iniciar
+    window.onload = () => mostrar('productos');
 </script>
 
 </body>
