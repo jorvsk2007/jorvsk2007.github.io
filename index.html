@@ -2,10 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema Papelería - Prototipo DER</title>
+    <title>Sistema Papelería - Conexión Supabase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         body{ font-family: 'Segoe UI', Arial, sans-serif; margin:0; background:#f4f6f8; }
-        header{ background:#e67e22; color:white; padding:15px; text-align:center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        header{ background:#e67e22; color:white; padding:15px; text-align:center; }
         .container{ display:flex; height:100vh; }
         .sidebar{ width:220px; background:#2c3e50; color:white; padding-top:20px; }
         .sidebar button{ width:100%; padding:15px; border:none; background:none; color:white; text-align:left; cursor:pointer; font-size:14px; border-bottom: 1px solid #34495e; }
@@ -20,12 +22,11 @@
         th, td{ border:1px solid #eee; padding:12px; text-align:left; }
         th{ background:#f8f9fa; color: #7f8c8d; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
 <header>
-    <h1>Gestión de Papelería (Modelo DER)</h1>
+    <h1>Gestión de Papelería (Conectado a Supabase)</h1>
 </header>
 
 <div class="container">
@@ -41,86 +42,90 @@
         <div id="productos" class="section active">
             <h2>Gestión de Productos</h2>
             <div class="form-group">
-                <input placeholder="ID Producto (PK)">
-                <input placeholder="Nombre">
-                <input placeholder="Descripción">
-                <input placeholder="Precio">
-                <input placeholder="Cant. Existencia">
+                <input id="p_id" placeholder="ID Producto (Ejem: 1)">
+                <input id="p_nombre" placeholder="Nombre">
+                <input id="p_desc" placeholder="Descripción">
+                <input id="p_precio" type="number" placeholder="Precio">
+                <input id="p_stock" type="number" placeholder="Cant. Existencia">
+                <input id="p_prov" placeholder="Matrícula Proveedor (FK)">
             </div>
-            <button class="action">Guardar Producto</button>
-            <table>
-                <tr><th>ID</th><th>Nombre</th><th>Descripción</th><th>Precio</th><th>Stock</th></tr>
-            </table>
-        </div>
-
-        <div id="proveedores" class="section">
-            <h2>Gestión de Proveedores</h2>
-            <div class="form-group">
-                <input placeholder="Matrícula (PK)">
-                <input placeholder="Nombre">
-                <input placeholder="Apellidos">
-                <input placeholder="Marca">
-                <input placeholder="Teléfono">
-                <input placeholder="Correo">
-            </div>
-            <button class="action">Registrar Proveedor</button>
-            <table>
-                <tr><th>Matrícula</th><th>Nombre</th><th>Marca</th><th>Teléfono</th><th>Correo</th></tr>
+            <button class="action" onclick="guardarProducto()">Guardar Producto</button>
+            <table id="tabla-productos">
+                <thead><tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th></tr></thead>
+                <tbody></tbody>
             </table>
         </div>
 
         <div id="trabajadores" class="section">
             <h2>Gestión de Trabajadores</h2>
             <div class="form-group">
-                <input placeholder="RFC (PK)">
-                <input placeholder="CURP">
-                <input placeholder="Nombre">
-                <input placeholder="Apellidos">
-                <input placeholder="Rol/Puesto">
-                <input placeholder="Teléfono">
+                <input id="t_rfc" placeholder="RFC">
+                <input id="t_curp" placeholder="CURP">
+                <input id="t_nombre" placeholder="Nombre">
+                <input id="t_apellidos" placeholder="Apellidos">
+                <input id="t_rol" placeholder="Rol/Puesto">
             </div>
-            <button class="action">Contratar Trabajador</button>
-            <table>
-                <tr><th>RFC</th><th>Nombre</th><th>Apellidos</th><th>Rol</th><th>Teléfono</th></tr>
+            <button class="action" onclick="guardarTrabajador()">Registrar Trabajador</button>
+            <table id="tabla-trabajadores">
+                <thead><tr><th>RFC</th><th>Nombre</th><th>Rol</th></tr></thead>
+                <tbody></tbody>
             </table>
         </div>
-
-        <div id="ventas" class="section">
-            <h2>Registro de Ventas (Cabecera)</h2>
-            <div class="form-group">
-                <input placeholder="ID Venta (PK)">
-                <input type="date" placeholder="Fecha">
-                <input placeholder="RFC Trabajador (FK)">
-                <input placeholder="Precio Total ($)">
-            </div>
-            <button class="action">Abrir Ticket de Venta</button>
-            <table>
-                <tr><th>ID Venta</th><th>Fecha</th><th>Vendedor (RFC)</th><th>Total</th></tr>
-            </table>
+        
         </div>
-
-        <div id="detalle" class="section">
-            <h2>Detalle de Venta (Partidas)</h2>
-            <div class="form-group">
-                <input placeholder="ID Detalle (PK)">
-                <input placeholder="ID Venta (FK)">
-                <input placeholder="ID Producto (FK)">
-                <input type="number" placeholder="Cantidad">
-                <input placeholder="Precio Unitario">
-                <input placeholder="Subtotal">
-            </div>
-            <button class="action">Añadir al Carrito</button>
-            <table>
-                <tr><th>ID Detalle</th><th>Venta</th><th>Producto</th><th>Cant.</th><th>Subtotal</th></tr>
-            </table>
-        </div>
-    </div>
 </div>
 
 <script>
+    // 2. CONFIGURACIÓN DE SUPABASE (Reemplaza con tus credenciales)
+    const SUPABASE_URL = 'https://Practica 3.1.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4bnhqeGl3Y2J5cHVkaWtiYWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxOTAwNzUsImV4cCI6MjA4ODc2NjA3NX0.5O7Wlzz3XRRlWky9LNPtu2-xbznBYOmC0lmBWgbArCs';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Navegación simple
     function mostrar(seccion){
         document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
         document.getElementById(seccion).classList.add("active");
+    }
+
+    // 3. FUNCIÓN PARA GUARDAR PRODUCTO
+    async function guardarProducto() {
+        const prod = {
+            id_producto: document.getElementById('p_id').value,
+            nombre: document.getElementById('p_nombre').value,
+            descripcion: document.getElementById('p_desc').value,
+            precio: parseFloat(document.getElementById('p_precio').value),
+            cant_exist: parseInt(document.getElementById('p_stock').value),
+            matricula_proveedor: document.getElementById('p_prov').value
+        };
+
+        const { data, error } = await _supabase
+            .from('producto')
+            .insert([prod]);
+
+        if (error) {
+            alert("Error: " + error.message);
+        } else {
+            alert("Producto guardado exitosamente!");
+            // Aquí podrías llamar a una función para limpiar los inputs
+        }
+    }
+
+    // 4. FUNCIÓN PARA GUARDAR TRABAJADOR
+    async function guardarTrabajador() {
+        const tra = {
+            rfc: document.getElementById('t_rfc').value,
+            curp_tra: document.getElementById('t_curp').value,
+            nombre: document.getElementById('t_nombre').value,
+            apellidos: document.getElementById('t_apellidos').value,
+            rol: document.getElementById('t_rol').value
+        };
+
+        const { data, error } = await _supabase
+            .from('trabajadores')
+            .insert([tra]);
+
+        if (error) alert("Error: " + error.message);
+        else alert("Trabajador registrado!");
     }
 </script>
 
