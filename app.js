@@ -1,92 +1,90 @@
-// CONFIGURACIÓN SUPABASE
-const _supabaseUrl = 'https://kxnxjxiwcbypudikbais.supabase.co';
-const _supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4bnhqeGl3Y2J5cHVkaWtiYWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxOTAwNzUsImV4cCI6MjA4ODc2NjA3NX0.5O7Wlzz3XRRlWky9LNPtu2-xbznBYOmC0lmBWgbArCs';
-const supabase = supabase.createClient(_supabaseUrl, _supabaseKey);
+const URL_SB = 'https://kxnxjxiwcbypudikbais.supabase.co';
+const KEY_SB = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4bnhqeGl3Y2J5cHVkaWtiYWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxOTAwNzUsImV4cCI6MjA4ODc2NjA3NX0.5O7Wlzz3XRRlWky9LNPtu2-xbznBYOmC0lmBWgbArCs';
+const supabaseClient = supabase.createClient(URL_SB, KEY_SB);
 
+let usuarioActual = null;
 let carrito = [];
-let ultimaVentaTotal = 0;
-let usuarioLogueado = null;
 
-// NAVEGACIÓN
-function navegar(pantalla) {
-    const content = document.getElementById('app-content');
-    if (pantalla === 'ventas') {
-        content.innerHTML = `
-            <div class="ventas-container">
-                <div class="ticket-panel">
-                    <h2>Ticket de Venta</h2>
-                    <button onclick="abrirModalBusqueda()">+ Agregar Producto</button>
-                    <table id="tabla-ticket">
-                        <thead><tr><th>Prod</th><th>Cant</th><th>Subtotal</th></tr></thead>
-                        <tbody id="body-ticket"></tbody>
-                    </table>
-                </div>
-                <div class="totales-panel">
-                    <h3>TOTAL ACTUAL: $<span id="total-actual">0.00</span></h3>
-                    <p>Venta anterior: $<span id="total-anterior">${ultimaVentaTotal}</span></p>
-                    <button onclick="finalizarVenta()" style="background: #22c55e; color: white;">Registrar Venta</button>
-                </div>
-            </div>`;
-    } else if (pantalla === 'productos') {
-        renderizarProductos();
-    }
-}
+// MODALES
+function abrirLogin() { document.getElementById('modal-login').classList.remove('hidden'); }
+function cerrarLogin() { document.getElementById('modal-login').classList.add('hidden'); }
+function abrirBuscador() { document.getElementById('modal-busqueda').classList.remove('hidden'); filtrarProductos(''); }
+function cerrarBuscador() { document.getElementById('modal-busqueda').classList.add('hidden'); }
 
-// BÚSQUEDA EN MODAL
-async function abrirModalBusqueda() {
-    document.getElementById('modal-busqueda').classList.remove('hidden');
-    buscarProductos(''); // Carga inicial
-}
-
-async function buscarProductos(termino) {
-    let query = supabase.from('PRODUCTO').select('*');
-    if(termino) query = query.ilike('nombre', `%${termino}%`);
+// LOGIN
+async function ejecutarLogin() {
+    const curp = document.getElementById('input-curp').value.trim();
     
-    const { data, error } = await query;
-    const tbody = document.getElementById('body-resultados');
-    tbody.innerHTML = data.map(p => `
-        <tr>
-            <td>${p.id_producto}</td>
-            <td>${p.nombre}</td>
-            <td>$${p.precio}</td>
-            <td>${p.cant_exist}</td>
-            <td><button onclick="agregarAlTicket('${p.id_producto}', '${p.nombre}', ${p.precio})">Elegir</button></td>
-        </tr>
-    `).join('');
-}
-
-function agregarAlTicket(id, nombre, precio) {
-    carrito.push({ id, nombre, precio, cantidad: 1 });
-    actualizarInterfazTicket();
-    cerrarModal();
-}
-
-function actualizarInterfazTicket() {
-    const tbody = document.getElementById('body-ticket');
-    let total = 0;
-    tbody.innerHTML = carrito.map(item => {
-        total += item.precio;
-        return `<tr><td>${item.nombre}</td><td>1</td><td>$${item.precio}</td></tr>`;
-    }).join('');
-    document.getElementById('total-actual').innerText = total.toFixed(2);
-}
-
-// LOGIN Y PRIVILEGIOS
-async function login(curp) {
-    const { data, error } = await supabase
+    // Consulta exacta a tus tablas
+    const { data, error } = await supabaseClient
         .from('TRABAJADORES')
-        .select('*, PERSONA(nombre)')
-        .eq('curp', curp).single();
+        .select('curp, rol, PERSONA(nombre)')
+        .eq('curp', curp)
+        .maybeSingle();
+
+    if (error) {
+        console.error("Error:", error);
+        return;
+    }
 
     if (data) {
-        usuarioLogueado = data;
-        document.getElementById('user-profile').classList.remove('hidden');
-        document.getElementById('user-name').innerText = data.rol + ": " + data.PERSONA.nombre;
-        document.getElementById('btn-login-main').classList.add('hidden');
-        navegar('ventas');
+        usuarioActual = data;
+        document.getElementById('modal-login').classList.add('hidden');
+        document.getElementById('btn-login-header').classList.add('hidden');
+        document.getElementById('user-info').classList.remove('hidden');
+        document.getElementById('main-nav').classList.remove('hidden');
+        document.getElementById('display-user-name').innerText = `${data.rol}: ${data.PERSONA.nombre}`;
+        irAVentas();
+    } else {
+        document.getElementById('error-login').classList.remove('hidden');
     }
 }
 
-function cerrarModal() {
-    document.getElementById('modal-busqueda').classList.add('hidden');
+function cerrarSesion() { location.reload(); }
+
+// NAVEGACIÓN Y VENTAS
+function irAVentas() {
+    document.getElementById('app-view').innerHTML = `
+        <h2>Panel de Ventas</h2>
+        <button onclick="abrirBuscador()">🔍 Buscar Producto</button>
+        <table>
+            <thead><tr><th>Producto</th><th>Precio</th></tr></thead>
+            <tbody id="ticket-body"></tbody>
+        </table>
+        <div style="margin-top:20px; font-weight:bold;">Total: $<span id="total-monto">0.00</span></div>
+    `;
+}
+
+async function irAProductos() {
+    const { data } = await supabaseClient.from('PRODUCTO').select('*');
+    document.getElementById('app-view').innerHTML = `
+        <h2>Inventario</h2>
+        <table>
+            <thead><tr><th>ID</th><th>Nombre</th><th>Stock</th></tr></thead>
+            <tbody>${data.map(p => `<tr><td>${p.id_producto}</td><td>${p.nombre}</td><td>${p.cant_exist}</td></tr>`).join('')}</tbody>
+        </table>
+    `;
+}
+
+async function filtrarProductos(termino) {
+    let query = supabaseClient.from('PRODUCTO').select('*');
+    if(termino) query = query.ilike('nombre', `%${termino}%`);
+    const { data } = await query;
+    document.getElementById('lista-busqueda').innerHTML = data.map(p => `
+        <tr>
+            <td>${p.id_producto}</td><td>${p.nombre}</td><td>$${p.precio}</td><td>${p.cant_exist}</td>
+            <td><button onclick="sumarAlTicket('${p.nombre}', ${p.precio})">Añadir</button></td>
+        </tr>`).join('');
+}
+
+function sumarAlTicket(nombre, precio) {
+    carrito.push({ nombre, precio });
+    cerrarBuscador();
+    const body = document.getElementById('ticket-body');
+    let total = 0;
+    body.innerHTML = carrito.map(i => {
+        total += i.precio;
+        return `<tr><td>${i.nombre}</td><td>$${i.precio}</td></tr>`;
+    }).join('');
+    document.getElementById('total-monto').innerText = total.toFixed(2);
 }
