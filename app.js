@@ -397,25 +397,43 @@ function cambiarCantidad(idx, delta) {
     }
 }
 
-// Abre el modal y carga los clientes
+// 1. Corregimos la consulta para que pida 'curp' (como está en tu imagen)
 async function abrirModalCliente() {
     document.getElementById('modal-cliente').classList.remove('hidden');
-    const { data: clientes } = await supabaseClient
+    
+    const { data: clientes, error } = await supabaseClient
         .from('cliente')
-        .select('curp_cliente, persona(nombre, apellidos)');
+        .select('curp, persona(nombre, apellidos)'); // Cambié curp_cliente por curp
+    
+    if (error) {
+        console.error("Error al traer clientes:", error);
+        return;
+    }
     
     renderizarListaClientes(clientes);
 }
 
+// 2. Corregimos el renderizado para leer 'curp' y manejar nombres nulos
 function renderizarListaClientes(clientes) {
     const body = document.getElementById('lista-clientes-body');
-    body.innerHTML = clientes.map(c => `
-        <tr>
-            <td>${c.persona.nombre} ${c.persona.apellidos}</td>
-            <td><small>${c.curp_cliente}</small></td>
-            <td><button class="btn-confirm" onclick="fijarCliente('${c.curp_cliente}', '${c.persona.nombre}')">Elegir</button></td>
-        </tr>
-    `).join('');
+    
+    if (!clientes || clientes.length === 0) {
+        body.innerHTML = '<tr><td colspan="3">No hay datos</td></tr>';
+        return;
+    }
+
+    body.innerHTML = clientes.map(c => {
+        // Si persona es null por algún error de relación, ponemos un genérico
+        const nombreDisplay = c.persona ? `${c.persona.nombre} ${c.persona.apellidos}` : "Sin nombre (Revisar Relación)";
+        
+        return `
+            <tr>
+                <td>${nombreDisplay}</td>
+                <td><small>${c.curp}</small></td> 
+                <td><button class="btn-confirm" onclick="fijarCliente('${c.curp}', '${c.persona?.nombre || 'Cliente'}')">Elegir</button></td>
+            </tr>
+        `;
+    }).join('');
 }
 
 function fijarCliente(curp, nombre) {
