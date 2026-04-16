@@ -358,11 +358,11 @@ async function irAReportes() {
                 </thead>
                 <tbody>
                     ${data.map(v => `
-                        <tr>
-                            <td>#${v.id_venta}</td>
+                        <tr style="border-bottom:1px solid #eee;">
+                            <td style="padding:15px;">#${v.id_venta}</td>
                             <td>${new Date(v.fecha).toLocaleDateString()}</td>
-                            <td>$${v.precio_total}</td>
-                            <td>${v.curp_trabajador}</td>
+                            <td>$${parseFloat(v.precio_total).toFixed(2)}</td>
+                            <td><small>${v.curp_trabajador}</small></td>
                         </tr>
                     `).join('')}
                 </tbody>
