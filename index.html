@@ -2,102 +2,18 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Papelería DB - Sistema de Gestión</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            --primary: #2563eb;
-            --dark: #1e293b;
-            --light: #f8fafc;
-            --accent: #22c55e;
-        }
-
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--light); color: var(--dark); }
-
-        /* HEADER FIJO */
-        .main-header {
-            position: fixed; top: 0; width: 100%; height: 60px;
-            background: var(--dark); color: white;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 20px; box-sizing: border-box; z-index: 1000;
-        }
-
-        .logo { font-weight: bold; font-size: 1.5rem; letter-spacing: 1px; }
-
-        /* CINTA DE OPCIONES FIJA */
-        .nav-bar {
-            position: fixed; top: 60px; width: 100%; height: 50px;
-            background: white; border-bottom: 1px solid #e2e8f0;
-            display: flex; align-items: center; padding: 0 20px;
-            gap: 15px; z-index: 999;
-        }
-
-        .nav-bar button {
-            background: none; border: none; padding: 8px 15px;
-            cursor: pointer; font-weight: 500; color: var(--dark);
-            border-radius: 4px; transition: background 0.2s;
-        }
-
-        .nav-bar button:hover { background: #f1f5f9; }
-
-        /* CONTENIDO PRINCIPAL */
-        main { margin-top: 120px; padding: 20px; min-height: calc(100vh - 120px); }
-
-        /* MODALES */
-        .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6); display: flex;
-            justify-content: center; align-items: center; z-index: 2000;
-        }
-
-        .modal-content {
-            background: white; padding: 30px; border-radius: 12px;
-            width: 400px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-
-        .modal-content.large { width: 80%; max-height: 85vh; overflow-y: auto; }
-
-        .hidden { display: none !important; }
-
-        /* FORMULARIOS */
-        input {
-            width: 100%; padding: 12px; margin: 10px 0;
-            border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;
-        }
-
-        button.primary-btn {
-            background: var(--primary); color: white; border: none;
-            padding: 12px 20px; border-radius: 6px; cursor: pointer; width: 100%;
-        }
-
-        /* ÁREA DE VENTAS */
-        .ventas-layout { display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
-        .ticket-box { background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
-        
-        .totales-floating {
-            position: fixed; bottom: 30px; right: 30px;
-            background: var(--dark); color: white; padding: 25px;
-            border-radius: 12px; box-shadow: 0 10px 15px rgba(0,0,0,0.2);
-        }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #f1f5f9; }
-        th { background: #f8fafc; text-transform: uppercase; font-size: 0.8rem; }
-    </style>
 </head>
 <body>
-
     <header class="main-header">
         <div class="logo">papeleria_db</div>
         <div id="user-controls">
-            <button onclick="abrirLogin()" id="btn-login-header" style="background:var(--primary); color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;">
-                Iniciar Sesión
-            </button>
+            <button onclick="abrirLogin()" id="btn-login-header">Iniciar Sesión</button>
             <div id="user-info" class="hidden">
-                <span id="display-user-name" style="margin-right: 15px; font-weight: 500;"></span>
-                <button onclick="cerrarSesion()" style="background:#ef4444; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Salir</button>
+                <span id="display-user-name"></span>
+                <button onclick="cerrarSesion()" class="btn-logout">Salir</button>
             </div>
         </div>
     </header>
@@ -105,158 +21,39 @@
     <nav class="nav-bar hidden" id="main-nav">
         <button onclick="irAVentas()">🛒 Ventas</button>
         <button onclick="irAProductos()">📦 Productos</button>
-        <button onclick="alert('Acceso para Admin únicamente')">📊 Reportes</button>
     </nav>
 
     <main id="app-view">
-        <div style="text-align: center; margin-top: 100px;">
-            <h1>Bienvenido al Sistema de Papelería</h1>
-            <p>Inicie sesión para gestionar ventas e inventario.</p>
+        <div class="welcome">
+            <h1>Bienvenido al Sistema</h1>
+            <p>Inicie sesión con su CURP para continuar.</p>
         </div>
     </main>
 
     <div id="modal-login" class="modal hidden">
         <div class="modal-content">
-            <h2>Bienvenido</h2>
-            <p>Ingresa tu CURP de trabajador</p>
-            <input type="text" id="input-curp" placeholder="CURP (Ej: RORL95...)">
-            <button class="primary-btn" onclick="ejecutarLogin()">Entrar al Sistema</button>
-            <button onclick="cerrarLogin()" style="background:none; border:none; color:#64748b; margin-top:10px; cursor:pointer;">Cancelar</button>
-            <p id="error-login" style="color:red; font-size:0.9rem;" class="hidden">Usuario no encontrado.</p>
+            <h2>Acceso</h2>
+            <input type="text" id="input-curp" placeholder="Ingresa tu CURP">
+            <button class="primary-btn" onclick="ejecutarLogin()">Entrar</button>
+            <button onclick="cerrarLogin()" class="btn-text">Cancelar</button>
+            <p id="error-login" class="error hidden">Usuario no encontrado</p>
         </div>
     </div>
 
     <div id="modal-busqueda" class="modal hidden">
         <div class="modal-content large">
-            <h3>Seleccionar Producto</h3>
-            <input type="text" placeholder="Buscar por nombre..." oninput="filtrarProductos(this.value)">
+            <h3>Buscar Producto</h3>
+            <input type="text" placeholder="Filtrar por nombre..." oninput="filtrarProductos(this.value)">
             <table>
                 <thead>
                     <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th><th></th></tr>
                 </thead>
                 <tbody id="lista-busqueda"></tbody>
             </table>
-            <button onclick="cerrarBuscador()" style="margin-top:20px;">Cerrar</button>
+            <button onclick="cerrarBuscador()">Cerrar</button>
         </div>
     </div>
 
-    <script>
-        // --- CONFIGURACIÓN SUPABASE ---
-        const URL_SB = 'https://kxnxjxiwcbypudikbais.supabase.co'; 
-        const KEY_SB = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4bnhqeGl3Y2J5cHVkaWtiYWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxOTAwNzUsImV4cCI6MjA4ODc2NjA3NX0.5O7Wlzz3XRRlWky9LNPtu2-xbznBYOmC0lmBWgbArCs';
-        const supabaseClient = supabase.createClient(URL_SB, KEY_SB);
-
-        let usuarioActual = null;
-        let carrito = [];
-        let totalAnterior = 0;
-
-        // --- LÓGICA DE SESIÓN ---
-        function abrirLogin() { document.getElementById('modal-login').classList.remove('hidden'); }
-        function cerrarLogin() { document.getElementById('modal-login').classList.add('hidden'); }
-
-        async function ejecutarLogin() {
-            const curp = document.getElementById('input-curp').value.trim();
-            const { data, error } = await supabaseClient
-                .from('TRABAJADORES')
-                .select('curp, rol, PERSONA(nombre)')
-                .eq('curp', curp)
-                .single();
-
-            if (data) {
-                usuarioActual = data;
-                document.getElementById('modal-login').classList.add('hidden');
-                document.getElementById('btn-login-header').classList.add('hidden');
-                document.getElementById('user-info').classList.remove('hidden');
-                document.getElementById('main-nav').classList.remove('hidden');
-                document.getElementById('display-user-name').innerText = data.rol + ": " + data.PERSONA.nombre;
-                irAVentas();
-            } else {
-                document.getElementById('error-login').classList.remove('hidden');
-            }
-        }
-
-        function cerrarSesion() { location.reload(); }
-
-        // --- NAVEGACIÓN ---
-        function irAVentas() {
-            const view = document.getElementById('app-view');
-            view.innerHTML = `
-                <div class="ventas-layout">
-                    <div class="ticket-box">
-                        <h2>Nueva Venta</h2>
-                        <button onclick="abrirBuscador()" style="padding:10px; cursor:pointer;">🔍 Buscar Producto</button>
-                        <table id="tabla-venta">
-                            <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr></thead>
-                            <tbody id="ticket-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="totales-floating">
-                    <p style="margin:0; font-size:0.9rem; opacity:0.8;">Venta Anterior: $${totalAnterior.toFixed(2)}</p>
-                    <h1 style="margin:5px 0;">TOTAL: $<span id="total-monto">0.00</span></h1>
-                    <button onclick="vender()" style="width:100%; padding:10px; background:var(--accent); border:none; color:white; font-weight:bold; border-radius:5px; cursor:pointer;">COBRAR</button>
-                </div>
-            `;
-        }
-
-        async function irAProductos() {
-            const view = document.getElementById('app-view');
-            const { data } = await supabaseClient.from('PRODUCTO').select('*');
-            view.innerHTML = `
-                <h2>Inventario de Productos</h2>
-                <table>
-                    <thead><tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th></tr></thead>
-                    <tbody>${data.map(p => `<tr><td>${p.id_producto}</td><td>${p.nombre}</td><td>$${p.precio}</td><td>${p.cant_exist}</td></tr>`).join('')}</tbody>
-                </table>
-            `;
-        }
-
-        // --- BUSCADOR ---
-        async function abrirBuscador() {
-            document.getElementById('modal-busqueda').classList.remove('hidden');
-            filtrarProductos('');
-        }
-        function cerrarBuscador() { document.getElementById('modal-busqueda').classList.add('hidden'); }
-
-        async function filtrarProductos(termino) {
-            let query = supabaseClient.from('PRODUCTO').select('*');
-            if(termino) query = query.ilike('nombre', `%${termino}%`);
-            const { data } = await query;
-            
-            const lista = document.getElementById('lista-busqueda');
-            lista.innerHTML = data.map(p => `
-                <tr>
-                    <td>${p.id_producto}</td>
-                    <td>${p.nombre}</td>
-                    <td>$${p.precio}</td>
-                    <td>${p.cant_exist}</td>
-                    <td><button onclick="sumarAlTicket('${p.id_producto}', '${p.nombre}', ${p.precio})">Seleccionar</button></td>
-                </tr>
-            `).join('');
-        }
-
-        function sumarAlTicket(id, nombre, precio) {
-            carrito.push({ id, nombre, precio });
-            renderizarTicket();
-            cerrarBuscador();
-        }
-
-        function renderizarTicket() {
-            const body = document.getElementById('ticket-body');
-            let suma = 0;
-            body.innerHTML = carrito.map(i => {
-                suma += i.precio;
-                return `<tr><td>${i.nombre}</td><td>1</td><td>$${i.precio}</td><td>$${i.precio}</td></tr>`;
-            }).join('');
-            document.getElementById('total-monto').innerText = suma.toFixed(2);
-        }
-
-        function vender() {
-            totalAnterior = parseFloat(document.getElementById('total-monto').innerText);
-            alert("Venta registrada con éxito.");
-            carrito = [];
-            irAVentas();
-        }
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
