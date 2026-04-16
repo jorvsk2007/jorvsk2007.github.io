@@ -64,7 +64,7 @@ async function ejecutarLogin() {
             document.getElementById('main-nav').classList.remove('hidden');
             
             // Verificamos si PERSONA existe en el objeto devuelto
-            const nombreCompleto = data.PERSONA ? data.PERSONA.nombre : "Usuario";
+            const nombreCompleto = data.persona ? data.persona.nombre : "Usuario"; 
             document.getElementById('user-display-name').innerText = `${data.rol}: ${nombreCompleto}`;
             
             irAVentas();
