@@ -2,55 +2,94 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Papelería DB - Sistema de Gestión</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGBD | Papelería DB</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
     <header class="main-header">
-        <div class="logo">papeleria_db</div>
-        <div id="user-controls">
-            <button onclick="abrirLogin()" id="btn-login-header">Iniciar Sesión</button>
-            <div id="user-info" class="hidden">
-                <span id="display-user-name"></span>
-                <button onclick="cerrarSesion()" class="btn-logout">Salir</button>
+        <div class="brand">papeleria_db</div>
+        
+        <div class="user-section">
+            <button id="btn-login-trigger" class="login-trigger-btn" onclick="abrirLogin()">
+                Iniciar Sesión
+            </button>
+
+            <div id="user-profile" class="user-profile hidden">
+                <div class="user-info" onclick="toggleDropdown()">
+                    <span id="user-display-name">Cargando...</span>
+                    <i class="arrow-down"></i>
+                </div>
+                <div id="user-dropdown" class="dropdown-content hidden">
+                    <button onclick="cerrarSesion()">Cerrar Sesión</button>
+                </div>
             </div>
         </div>
     </header>
 
     <nav class="nav-bar hidden" id="main-nav">
-        <button onclick="irAVentas()">🛒 Ventas</button>
-        <button onclick="irAProductos()">📦 Productos</button>
+        <div class="nav-container">
+            <button class="nav-btn active" onclick="navegar('ventas', this)">🛒 Ventas</button>
+            <button class="nav-btn" onclick="navegar('productos', this)">📦 Productos</button>
+            <button class="nav-btn" onclick="navegar('inventario', this)">📋 Inventario</button>
+            <button class="nav-btn" onclick="navegar('reportes', this)">📊 Reportes</button>
+        </div>
     </nav>
 
-    <main id="app-view">
-        <div class="welcome">
-            <h1>Bienvenido al Sistema</h1>
-            <p>Inicie sesión con su CURP para continuar.</p>
+    <main id="main-content">
+        <div class="hero-welcome">
+            <h1>Sistema de Gestión de Base de Datos</h1>
+            <p>Papelería Central v1.0</p>
+            <img src="https://cdn-icons-png.flaticon.com/512/3061/3061341.png" alt="logo" width="150">
         </div>
     </main>
 
-    <div id="modal-login" class="modal hidden">
-        <div class="modal-content">
-            <h2>Acceso</h2>
-            <input type="text" id="input-curp" placeholder="Ingresa tu CURP">
-            <button class="primary-btn" onclick="ejecutarLogin()">Entrar</button>
-            <button onclick="cerrarLogin()" class="btn-text">Cancelar</button>
-            <p id="error-login" class="error hidden">Usuario no encontrado</p>
+    <div id="modal-login" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>Identificación de Usuario</h2>
+            </div>
+            <div class="modal-body">
+                <label>CURP del Trabajador</label>
+                <input type="text" id="input-curp" placeholder="Ingrese su identificador..." autocomplete="off">
+                <p id="login-error-msg" class="error-text hidden">La CURP no coincide con ningún trabajador activo.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="cerrarLogin()">Cancelar</button>
+                <button class="btn-confirm" onclick="ejecutarLogin()">Acceder al Sistema</button>
+            </div>
         </div>
     </div>
 
-    <div id="modal-busqueda" class="modal hidden">
-        <div class="modal-content large">
-            <h3>Buscar Producto</h3>
-            <input type="text" placeholder="Filtrar por nombre..." oninput="filtrarProductos(this.value)">
-            <table>
-                <thead>
-                    <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th><th></th></tr>
-                </thead>
-                <tbody id="lista-busqueda"></tbody>
-            </table>
-            <button onclick="cerrarBuscador()">Cerrar</button>
+    <div id="modal-busqueda" class="modal-overlay hidden">
+        <div class="modal-card xxl">
+            <div class="modal-header">
+                <h2>Catálogo de Productos</h2>
+                <input type="text" id="search-input" placeholder="Buscar por nombre o descripción..." oninput="filtrarProductos(this.value)">
+            </div>
+            <div class="modal-body">
+                <div class="table-wrapper">
+                    <table id="search-results-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Precio Unitario</th>
+                                <th>Existencias</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="search-results-body">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="cerrarBuscador()">Cerrar Ventana</button>
+            </div>
         </div>
     </div>
 
