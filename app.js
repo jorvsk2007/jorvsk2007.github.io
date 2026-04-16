@@ -254,12 +254,12 @@ async function registrarVenta() {
         const totalVenta = parseFloat(document.getElementById('display-total').innerText.replace('$', ''));
 
         // 1. Insertar en 'ventas' incluyendo el id_venta manual
-        const { data: venta, error: errorVenta } = await supabaseClient
+            const { data: venta, error: errorVenta } = await supabaseClient
             .from('ventas')
             .insert([{ 
-                id_venta: nuevoIdVenta, // <-- Esto corrige el error de la columna NOT NULL
+                id_venta: nuevoIdVenta,
                 precio_total: totalVenta,
-                curp_cliente: "ROJA031120HDFRRJ03", 
+                curp_cliente: clienteSeleccionado, // Si es null, Supabase lo aceptará ahora
                 curp_trabajador: usuarioActual.curp 
             }])
             .select()
