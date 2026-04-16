@@ -453,12 +453,22 @@ function cerrarModalCliente() {
 }
 
 async function filtrarClientes(termino) {
-    const { data: clientes } = await supabaseClient
-        .from('cliente')
-        .select('curp, persona(nombre, apellidos)')
-        .or(`curp.ilike.%${termino}%, persona.nombre.ilike.%${termino}%`);
-    
-    renderizarListaClientes(clientes);
-}
+    const { data: personas, error } = await supabaseClient
+        .from('persona')
+        .select('curp, nombre, apellidos, cliente!inner(curp)') 
+        .or(`curp.ilike.%${termino}%, nombre.ilike.%${termino}%, apellidos.ilike.%${termino}%`);
 
+    if (error) {
+        console.error("Error al filtrar:", error);
+        return;
+    }
+
+    // Re-mapeamos un poco para que renderizarListaClientes no explote
+    const formatoClientes = personas.map(p => ({
+        curp: p.curp,
+        persona: { nombre: p.nombre, apellidos: p.apellidos }
+    }));
+    
+    renderizarListaClientes(formatoClientes);
+}
 
