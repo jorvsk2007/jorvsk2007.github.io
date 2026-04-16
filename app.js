@@ -42,8 +42,8 @@ async function ejecutarLogin() {
 
     try {
         const { data, error } = await supabaseClient
-            .from('TRABAJADORES')
-            .select('curp, rol, PERSONA(nombre, apellidos)')
+            .from('trabajadores') // <-- En minúsculas
+            .select('curp, rol, persona(nombre, apellidos)') // <-- En minúsculas
             .eq('curp', curp)
             .maybeSingle();
 
@@ -127,7 +127,7 @@ function irAVentas() {
 
 async function irAProductos() {
     const main = document.getElementById('main-content');
-    const { data } = await supabaseClient.from('PRODUCTO').select('*');
+    const { data } = await supabaseClient.from('producto').select('*');
     
     main.innerHTML = `
         <h2>Catálogo de Productos</h2>
@@ -142,7 +142,7 @@ async function irAProductos() {
 
 // 5. LÓGICA DE VENTA (EL TICKET)
 async function filtrarProductos(termino) {
-    let query = supabaseClient.from('PRODUCTO').select('*');
+    let query = supabaseClient.from('producto').select('*');
     if (termino) query = query.ilike('nombre', `%${termino}%`);
     
     const { data } = await query;
