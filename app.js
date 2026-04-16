@@ -402,8 +402,8 @@ async function abrirModalCliente() {
     document.getElementById('modal-cliente').classList.remove('hidden');
     
     const { data: clientes, error } = await supabaseClient
-        .from('persona')
-        .select('curp, persona(nombre, apellidos)'); // Cambié curp_cliente por curp
+        .from('cliente')
+        .select('curp, persona(nombre, apellidos)'); 
     
     if (error) {
         console.error("Error al traer clientes:", error);
@@ -454,7 +454,7 @@ function cerrarModalCliente() {
 
 async function filtrarClientes(termino) {
     const { data: clientes } = await supabaseClient
-        .from('persona')
+        .from('cliente')
         .select('curp, persona(nombre, apellidos)')
         .or(`curp.ilike.%${termino}%, persona.nombre.ilike.%${termino}%`);
     
