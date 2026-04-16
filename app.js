@@ -402,7 +402,7 @@ async function abrirModalCliente() {
     document.getElementById('modal-cliente').classList.remove('hidden');
     
     const { data: clientes, error } = await supabaseClient
-        .from('cliente')
+        .from('persona')
         .select('curp, persona(nombre, apellidos)'); // Cambié curp_cliente por curp
     
     if (error) {
