@@ -460,15 +460,16 @@ async function filtrarClientes(termino) {
 
     if (error) {
         console.error("Error al filtrar:", error);
+        // Si hay error (como que no encuentre al cliente), limpiamos la lista
+        renderizarListaClientes([]);
         return;
     }
 
-    // Re-mapeamos un poco para que renderizarListaClientes no explote
-    const formatoClientes = personas.map(p => ({
+    // Convertimos el formato para que sea compatible con tu función de renderizado
+    const formatoParaRender = personas.map(p => ({
         curp: p.curp,
         persona: { nombre: p.nombre, apellidos: p.apellidos }
     }));
     
-    renderizarListaClientes(formatoClientes);
+    renderizarListaClientes(formatoParaRender);
 }
-
