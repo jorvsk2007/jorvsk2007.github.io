@@ -40,7 +40,7 @@ async function ejecutarLogin() {
 
     const { data, error } = await supabaseClient
         .from('TRABAJADORES')
-        .select('curp, rol, PERSONA(nombre, apellidos)')
+        .select('curp, rol, persona:PERSONA(nombre, apellidos)')
         .eq('curp', curp)
         .maybeSingle();
 
