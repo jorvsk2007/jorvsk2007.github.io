@@ -310,10 +310,14 @@ async function guardarProductoBD() {
         return alert("Por favor, llena todos los campos correctamente.");
     }
 
+    // Generamos un ID manual porque tu tabla usa Varchar (Ej: P-842)
+    const idManual = "P-" + Math.floor(Math.random() * 999);
+
     try {
         const { data, error } = await supabaseClient
             .from('producto')
             .insert([{ 
+                id_producto: idManual, // <-- IMPORTANTE: Enviamos el ID
                 nombre: nombre, 
                 precio: precio, 
                 cant_exist: stock 
@@ -322,9 +326,9 @@ async function guardarProductoBD() {
 
         if (error) throw error;
 
-        alert("Producto registrado exitosamente.");
+        alert("Producto registrado exitosamente con ID: " + idManual);
         cerrarModalProducto();
-        irAProductos(); // Recargar la tabla
+        irAProductos(); 
 
     } catch (err) {
         console.error(err);
