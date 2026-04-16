@@ -143,16 +143,32 @@ function irAVentas() {
 
 async function irAProductos() {
     const main = document.getElementById('main-content');
-    const { data } = await supabaseClient.from('producto').select('*');
+    const { data, error } = await supabaseClient.from('producto').select('*');
     
+    // Solo mostramos el botón si es Admin o Almacenista
+    const canAdd = ['admin', 'almacenista'].includes(usuarioActual.rol.toLowerCase());
+
     main.innerHTML = `
-        <h2>Catálogo de Productos</h2>
-        <table>
-            <thead><tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Existencia</th></tr></thead>
-            <tbody>
-                ${data.map(p => `<tr><td>${p.id_producto}</td><td>${p.nombre}</td><td>$${p.precio}</td><td>${p.cant_exist}</td></tr>`).join('')}
-            </tbody>
-        </table>
+        <div style="background:white; padding:30px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+                <h2 style="margin:0; font-size:32px;">Inventario de Almacén</h2>
+                ${canAdd ? `<button class="btn-confirm" onclick="abrirModalProducto()" style="background:var(--accent);">+ Nuevo Producto</button>` : ''}
+            </div>
+            <table style="width:100%; text-align:left; font-size:18px;">
+                <thead style="background:#f8fafc;">
+                    <tr><th style="padding:20px;">ID</th><th>Nombre</th><th>Precio</th><th>Stock</th></tr>
+                </thead>
+                <tbody>
+                    ${data.map(p => `
+                        <tr style="border-bottom:1px solid #eee;">
+                            <td style="padding:20px;">${p.id_producto}</td>
+                            <td>${p.nombre}</td>
+                            <td>$${p.precio.toFixed(2)}</td>
+                            <td>${p.cant_exist}</td>
+                        </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>
     `;
 }
 
@@ -262,5 +278,48 @@ async function registrarVenta() {
     } catch (err) {
         console.error("Error completo:", err);
         alert("No se pudo registrar: " + err.message);
+    }
+}
+
+function abrirModalProducto() {
+    document.getElementById('modal-nuevo-producto').classList.remove('hidden');
+}
+
+function cerrarModalProducto() {
+    document.getElementById('modal-nuevo-producto').classList.add('hidden');
+    // Limpiar campos
+    document.getElementById('reg-nombre').value = '';
+    document.getElementById('reg-precio').value = '';
+    document.getElementById('reg-stock').value = '';
+}
+
+async function guardarProductoBD() {
+    const nombre = document.getElementById('reg-nombre').value.trim();
+    const precio = parseFloat(document.getElementById('reg-precio').value);
+    const stock = parseInt(document.getElementById('reg-stock').value);
+
+    if (!nombre || isNaN(precio) || isNaN(stock)) {
+        return alert("Por favor, llena todos los campos correctamente.");
+    }
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('producto')
+            .insert([{ 
+                nombre: nombre, 
+                precio: precio, 
+                cant_exist: stock 
+            }])
+            .select();
+
+        if (error) throw error;
+
+        alert("Producto registrado exitosamente.");
+        cerrarModalProducto();
+        irAProductos(); // Recargar la tabla
+
+    } catch (err) {
+        console.error(err);
+        alert("Error al guardar: " + err.message);
     }
 }
