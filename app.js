@@ -7,6 +7,7 @@ const supabaseClient = supabase.createClient(URL_SB, KEY_SB);
 let usuarioActual = null;
 let carrito = [];
 let totalVentaAnterior = 0;
+let clienteSeleccionado = null; // Guardará el objeto del cliente o null
 
 // 2. FUNCIONES DE INTERFAZ (MODALES Y MENÚS)
 function abrirLogin() {
@@ -395,8 +396,6 @@ function cambiarCantidad(idx, delta) {
         actualizarVistaTicket();
     }
 }
-
-let clienteSeleccionado = null; // Guardará el objeto del cliente o null
 
 // Abre el modal y carga los clientes
 async function abrirModalCliente() {
