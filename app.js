@@ -37,31 +37,45 @@ function cerrarBuscador() {
 async function ejecutarLogin() {
     const curp = document.getElementById('input-curp').value.trim();
     const errorMsg = document.getElementById('login-error-msg');
+    
+    console.log("Intentando login con CURP:", curp); // Esto sale en F12
 
-    const { data, error } = await supabaseClient
-        .from('TRABAJADORES')
-        .select('curp, rol, persona:PERSONA(nombre, apellidos)')
-        .eq('curp', curp)
-        .maybeSingle();
+    try {
+        const { data, error } = await supabaseClient
+            .from('TRABAJADORES')
+            .select('curp, rol, PERSONA(nombre, apellidos)')
+            .eq('curp', curp)
+            .maybeSingle();
 
-    if (error) {
-        console.error("Error de conexión:", error);
-        return;
-    }
+        if (error) {
+            alert("Error de Supabase: " + error.message);
+            console.error(error);
+            return;
+        }
 
-    if (data) {
-        usuarioActual = data;
-        // Cambiar visibilidad de elementos
-        document.getElementById('modal-login').classList.add('hidden');
-        document.getElementById('btn-login-trigger').classList.add('hidden');
-        document.getElementById('user-profile').classList.remove('hidden');
-        document.getElementById('main-nav').classList.remove('hidden');
-        
-        document.getElementById('user-display-name').innerText = `${data.rol}: ${data.PERSONA.nombre}`;
-        
-        irAVentas(); // Pantalla inicial después del login
-    } else {
-        errorMsg.classList.remove('hidden');
+        if (data) {
+            console.log("Datos encontrados:", data);
+            usuarioActual = data;
+            
+            // Forzamos la actualización visual
+            document.getElementById('modal-login').classList.add('hidden');
+            document.getElementById('btn-login-trigger').classList.add('hidden');
+            document.getElementById('user-profile').classList.remove('hidden');
+            document.getElementById('main-nav').classList.remove('hidden');
+            
+            // Verificamos si PERSONA existe en el objeto devuelto
+            const nombreCompleto = data.PERSONA ? data.PERSONA.nombre : "Usuario";
+            document.getElementById('user-display-name').innerText = `${data.rol}: ${nombreCompleto}`;
+            
+            irAVentas();
+            alert("¡Bienvenido " + nombreCompleto + "!");
+        } else {
+            // Si llega aquí, es que la consulta corrió pero no encontró la CURP
+            errorMsg.classList.remove('hidden');
+            alert("La CURP no existe en la tabla TRABAJADORES");
+        }
+    } catch (e) {
+        alert("Error crítico en el script: " + e.message);
     }
 }
 
