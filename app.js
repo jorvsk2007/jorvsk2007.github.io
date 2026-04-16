@@ -124,10 +124,23 @@ function irAVentas() {
     main.innerHTML = `
         <div class="ventas-view">
             <div class="ticket-section">
+                <div style="background: #f1f3f5; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #dee2e6;">
+                    <div>
+                        <small style="display:block; color:#666; text-transform:uppercase; font-size:10px; font-weight:bold;">Cliente de la venta:</small>
+                        <span id="cliente-info-display" style="font-weight: 600; color: #333;">
+                            ${clienteSeleccionado ? clienteSeleccionado : 'Público General'}
+                        </span>
+                    </div>
+                    <button onclick="abrirModalCliente()" style="background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                        🔍 Cambiar Cliente
+                    </button>
+                </div>
+
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <h2 style="margin:0;">Venta en curso</h2>
                     <button class="btn-confirm" onclick="abrirBuscador()" style="background:var(--accent);">+ Agregar Producto</button>
                 </div>
+
                 <table class="ticket-table">
                     <thead>
                         <tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subtotal</th><th></th></tr>
@@ -135,6 +148,7 @@ function irAVentas() {
                     <tbody id="ticket-body"></tbody>
                 </table>
             </div>
+            
             <div class="totals-section">
                 <div class="last-sale">Venta anterior: $${totalVentaAnterior.toFixed(2)}</div>
                 <div class="current-total">
