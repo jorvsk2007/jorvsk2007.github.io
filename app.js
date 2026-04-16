@@ -226,7 +226,13 @@ function actualizarVistaTicket() {
         return `
             <tr>
                 <td>${item.nombre}</td>
-                <td>${item.cantidad}</td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button onclick="cambiarCantidad(${idx}, -1)" style="width:25px; cursor:pointer;">-</button>
+                        <span>${item.cantidad}</span>
+                        <button onclick="cambiarCantidad(${idx}, 1)" style="width:25px; cursor:pointer;">+</button>
+                    </div>
+                </td>
                 <td>$${item.precio.toFixed(2)}</td>
                 <td>$${subtotal.toFixed(2)}</td>
                 <td><button onclick="quitarDelCarrito(${idx})" style="color:red; border:none; background:none; cursor:pointer;">✖</button></td>
@@ -240,14 +246,20 @@ function actualizarVistaTicket() {
 async function registrarVenta() {
     if (carrito.length === 0) return alert("El ticket está vacío.");
 
+    // Generamos un ID con el formato de tu tabla: VTA-2026-XXX
+    const randomNum = Math.floor(Math.random() * 999).toString().padStart(3, '0');
+    const nuevoIdVenta = `VTA-2026-${randomNum}`;
+
     try {
-        // 1. Insertar en la tabla 'ventas' con tus columnas específicas
+        const totalVenta = parseFloat(document.getElementById('display-total').innerText.replace('$', ''));
+
+        // 1. Insertar en 'ventas' incluyendo el id_venta manual
         const { data: venta, error: errorVenta } = await supabaseClient
             .from('ventas')
             .insert([{ 
-                // id_venta y fecha se suelen generar solos en la DB
-                precio_total: parseFloat(document.getElementById('display-total').innerText.replace('$', '')),
-                curp_cliente: "GOMA000000HDFRRN00", // Cambia esto o pide el CURP del cliente
+                id_venta: nuevoIdVenta, // <-- Esto corrige el error de la columna NOT NULL
+                precio_total: totalVenta,
+                curp_cliente: "GOMA000000HDFRRN00", 
                 curp_trabajador: usuarioActual.curp 
             }])
             .select()
@@ -255,37 +267,29 @@ async function registrarVenta() {
 
         if (errorVenta) throw errorVenta;
 
-        // 2. Descontar existencias en la tabla 'producto'
+        // 2. Descontar existencias
         for (const item of carrito) {
-            // Consultamos stock actual primero
             const { data: prod } = await supabaseClient
                 .from('producto')
                 .select('cant_exist')
                 .eq('id_producto', item.id)
                 .single();
 
-            const nuevoStock = prod.cant_exist - item.cantidad;
-
-            if (nuevoStock < 0) {
-                alert(`¡Alerta! Stock insuficiente para ${item.nombre}`);
-                continue;
-            }
-
             await supabaseClient
                 .from('producto')
-                .update({ cant_exist: nuevoStock })
+                .update({ cant_exist: prod.cant_exist - item.cantidad })
                 .eq('id_producto', item.id);
         }
 
-        totalVentaAnterior = parseFloat(document.getElementById('display-total').innerText.replace('$', ''));
-        alert("Venta #" + venta.id_venta + " registrada. Inventario actualizado.");
+        totalVentaAnterior = totalVenta;
+        alert("Venta registrada con éxito: " + nuevoIdVenta);
         
         carrito = [];
         irAVentas();
 
     } catch (err) {
         console.error("Error completo:", err);
-        alert("No se pudo registrar: " + err.message);
+        alert("No se pudo registrar: " + (err.message || "Error de servidor"));
     }
 }
 
@@ -366,3 +370,17 @@ async function irAReportes() {
         </div>
     `;
 }
+
+function cambiarCantidad(idx, delta) {
+    const nuevoValor = carrito[idx].cantidad + delta;
+    
+    if (nuevoValor <= 0) {
+        quitarDelCarrito(idx);
+    } else {
+        carrito[idx].cantidad = nuevoValor;
+        actualizarVistaTicket();
+    }
+}
+
+
+
