@@ -67,7 +67,12 @@ async function ejecutarLogin() {
             const nombreCompleto = data.persona ? data.persona.nombre : "Usuario"; 
             document.getElementById('user-display-name').innerText = `${data.rol}: ${nombreCompleto}`;
             
-            irAVentas();
+            // ... dentro de ejecutarLogin, después de asignar usuarioActual ...
+            if (data.rol.toLowerCase() === 'almacenista') {
+                irAProductos(); // El almacenista entra directo a ver su inventario
+            } else {
+                irAVentas(); // Admin y Cajero entran a ventas
+            }
             alert("¡Bienvenido " + nombreCompleto + "!");
         } else {
             // Si llega aquí, es que la consulta corrió pero no encontró la CURP
@@ -86,14 +91,25 @@ function cerrarSesion() {
 
 // 4. NAVEGACIÓN Y RENDERIZADO DE VISTAS
 function navegar(pantalla, btn) {
-    // Actualizar estilo de botones del nav
+    const rol = usuarioActual.rol.toLowerCase(); // Normalizamos a minúsculas
+
+    // Restricciones de Acceso
+    if (pantalla === 'ventas' && rol === 'almacenista') {
+        alert("Acceso Denegado: Su rol de Almacenista solo permite gestión de inventario.");
+        return;
+    }
+    if (pantalla === 'reportes' && rol !== 'admin') {
+        alert("Acceso Denegado: Se requieren privilegios de Administrador.");
+        return;
+    }
+
+    // Si pasa las reglas, navegamos
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
     if (pantalla === 'ventas') irAVentas();
-    if (pantalla === 'productos') irAProductos();
-    if (pantalla === 'inventario') alert("Cargando Inventario...");
-    if (pantalla === 'reportes') alert("Acceso restringido: Se requiere Admin.");
+    if (pantalla === 'productos' || pantalla === 'inventario') irAProductos();
+    if (pantalla === 'reportes') irAReportes(); 
 }
 
 function irAVentas() {
@@ -197,12 +213,54 @@ function actualizarVistaTicket() {
     displayTotal.innerText = `$${sumaTotal.toFixed(2)}`;
 }
 
-function registrarVenta() {
+async function registrarVenta() {
     if (carrito.length === 0) return alert("El ticket está vacío.");
-    
-    totalVentaAnterior = parseFloat(document.getElementById('display-total').innerText.replace('$', ''));
-    alert("¡Venta realizada con éxito! Los datos han sido enviados a Supabase.");
-    
-    carrito = [];
-    irAVentas();
+
+    try {
+        // 1. Insertar en la tabla 'ventas' con tus columnas específicas
+        const { data: venta, error: errorVenta } = await supabaseClient
+            .from('ventas')
+            .insert([{ 
+                // id_venta y fecha se suelen generar solos en la DB
+                precio_total: parseFloat(document.getElementById('display-total').innerText.replace('$', '')),
+                curp_cliente: "GOMA000000HDFRRN00", // Cambia esto o pide el CURP del cliente
+                curp_trabajador: usuarioActual.curp 
+            }])
+            .select()
+            .single();
+
+        if (errorVenta) throw errorVenta;
+
+        // 2. Descontar existencias en la tabla 'producto'
+        for (const item of carrito) {
+            // Consultamos stock actual primero
+            const { data: prod } = await supabaseClient
+                .from('producto')
+                .select('cant_exist')
+                .eq('id_producto', item.id)
+                .single();
+
+            const nuevoStock = prod.cant_exist - item.cantidad;
+
+            if (nuevoStock < 0) {
+                alert(`¡Alerta! Stock insuficiente para ${item.nombre}`);
+                continue;
+            }
+
+            await supabaseClient
+                .from('producto')
+                .update({ cant_exist: nuevoStock })
+                .eq('id_producto', item.id);
+        }
+
+        totalVentaAnterior = parseFloat(document.getElementById('display-total').innerText.replace('$', ''));
+        alert("Venta #" + venta.id_venta + " registrada. Inventario actualizado.");
+        
+        carrito = [];
+        irAVentas();
+
+    } catch (err) {
+        console.error("Error completo:", err);
+        alert("No se pudo registrar: " + err.message);
+    }
 }
