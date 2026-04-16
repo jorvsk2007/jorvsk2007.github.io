@@ -453,23 +453,30 @@ function cerrarModalCliente() {
 }
 
 async function filtrarClientes(termino) {
+    // Si el buscador está vacío, cargamos todos los clientes normalmente
+    if (!termino.trim()) {
+        abrirModalCliente();
+        return;
+    }
+
+    // Buscamos directamente en 'persona' para poder filtrar por nombre y apellido
+    // Pero filtramos solo a los que aparecen en la tabla 'cliente' (!inner)
     const { data: personas, error } = await supabaseClient
         .from('persona')
         .select('curp, nombre, apellidos, cliente!inner(curp)') 
         .or(`curp.ilike.%${termino}%, nombre.ilike.%${termino}%, apellidos.ilike.%${termino}%`);
 
     if (error) {
-        console.error("Error al filtrar:", error);
-        // Si hay error (como que no encuentre al cliente), limpiamos la lista
-        renderizarListaClientes([]);
+        console.error("Error en la búsqueda:", error.message);
+        renderizarListaClientes([]); // Limpia la tabla si hay error
         return;
     }
 
-    // Convertimos el formato para que sea compatible con tu función de renderizado
-    const formatoParaRender = personas.map(p => ({
+    // Re-estructuramos los datos para que 'renderizarListaClientes' no falle
+    const formatoCompatible = personas.map(p => ({
         curp: p.curp,
         persona: { nombre: p.nombre, apellidos: p.apellidos }
     }));
     
-    renderizarListaClientes(formatoParaRender);
+    renderizarListaClientes(formatoCompatible);
 }
