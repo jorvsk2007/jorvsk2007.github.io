@@ -454,9 +454,9 @@ function cerrarModalCliente() {
 
 async function filtrarClientes(termino) {
     const { data: clientes } = await supabaseClient
-        .from('cliente')
-        .select('curp_cliente, persona(nombre, apellidos)')
-        .or(`curp_cliente.ilike.%${termino}%, persona.nombre.ilike.%${termino}%`);
+        .from('persona')
+        .select('curp, persona(nombre, apellidos)')
+        .or(`curp.ilike.%${termino}%, persona.nombre.ilike.%${termino}%`);
     
     renderizarListaClientes(clientes);
 }
