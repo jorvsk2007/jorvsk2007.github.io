@@ -92,28 +92,31 @@ function cerrarSesion() {
 
 // 4. NAVEGACIÓN Y RENDERIZADO DE VISTAS
 function navegar(pantalla, btn) {
-    // Normalizamos el rol a minúsculas para comparar sin errores
-    const rol = usuarioActual.rol.toLowerCase();
+    // 1. Limpiamos espacios y pasamos a minúsculas
+    const rolActual = usuarioActual.rol.trim().toLowerCase();
+    console.log("Rol detectado en navegación:", rolActual);
 
-    // Bloqueos de seguridad
-    if (pantalla === 'ventas' && rol === 'almacenista') {
-        alert("Acceso Denegado: Su rol de Almacenista solo permite gestión de inventario.");
-        return;
-    }
-    
-    if (pantalla === 'reportes' && rol !== 'admin') {
-        alert("Acceso Denegado: Se requieren privilegios de Administrador.");
-        return;
+    // 2. Bloqueo de Reportes
+    if (pantalla === 'reportes') {
+        if (rolActual !== 'admin') {
+            alert(`Acceso Denegado. Tu rol es "${usuarioActual.rol}", se requiere "Admin".`);
+            return;
+        }
     }
 
-    // Actualizar botones visualmente
+    // 3. Bloqueo de Ventas para Almacenista
+    if (pantalla === 'ventas' && rolActual === 'almacenista') {
+        alert("Los almacenistas no tienen permiso para realizar ventas.");
+        return;
+    }
+
+    // Si pasa, cambiamos la vista
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    // Cargar vistas
     if (pantalla === 'ventas') irAVentas();
     if (pantalla === 'productos' || pantalla === 'inventario') irAProductos();
-    if (pantalla === 'reportes') alert("Cargando Reportes de Ventas...");
+    if (pantalla === 'reportes') irAReportes(); 
 }
 
 function irAVentas() {
@@ -327,4 +330,35 @@ async function guardarProductoBD() {
         console.error(err);
         alert("Error al guardar: " + err.message);
     }
+}
+
+async function irAReportes() {
+    const main = document.getElementById('main-content');
+    const { data, error } = await supabaseClient.from('ventas').select('*');
+
+    main.innerHTML = `
+        <div style="background:white; padding:30px; border-radius:12px;">
+            <h2>Historial de Ventas (Reporte General)</h2>
+            <table style="width:100%; margin-top:20px;">
+                <thead>
+                    <tr style="text-align:left; border-bottom:2px solid #eee;">
+                        <th>ID Venta</th>
+                        <th>Fecha</th>
+                        <th>Total</th>
+                        <th>Trabajador</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.map(v => `
+                        <tr>
+                            <td>#${v.id_venta}</td>
+                            <td>${new Date(v.fecha).toLocaleDateString()}</td>
+                            <td>$${v.precio_total}</td>
+                            <td>${v.curp_trabajador}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
 }
