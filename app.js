@@ -382,5 +382,44 @@ function cambiarCantidad(idx, delta) {
     }
 }
 
+let clienteSeleccionado = null; // Guardará el objeto del cliente o null
+
+// Abre el modal y carga los clientes
+async function abrirModalCliente() {
+    document.getElementById('modal-cliente').classList.remove('hidden');
+    const { data: clientes } = await supabaseClient
+        .from('cliente')
+        .select('curp_cliente, persona(nombre, apellidos)');
+    
+    renderizarListaClientes(clientes);
+}
+
+function renderizarListaClientes(clientes) {
+    const body = document.getElementById('lista-clientes-body');
+    body.innerHTML = clientes.map(c => `
+        <tr>
+            <td>${c.persona.nombre} ${c.persona.apellidos}</td>
+            <td><small>${c.curp_cliente}</small></td>
+            <td><button class="btn-confirm" onclick="fijarCliente('${c.curp_cliente}', '${c.persona.nombre}')">Elegir</button></td>
+        </tr>
+    `).join('');
+}
+
+function fijarCliente(curp, nombre) {
+    clienteSeleccionado = curp;
+    document.getElementById('cliente-info-display').innerText = `Cliente: ${nombre}`;
+    cerrarModalCliente();
+}
+
+function seleccionarClienteNull() {
+    clienteSeleccionado = null;
+    document.getElementById('cliente-info-display').innerText = "Cliente: Público General";
+    cerrarModalCliente();
+}
+
+function cerrarModalCliente() {
+    document.getElementById('modal-cliente').classList.add('hidden');
+}
+
 
 
