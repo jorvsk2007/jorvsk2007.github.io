@@ -93,6 +93,26 @@
         </div>
     </div>
 
+    <div id="modal-nuevo-producto" class="modal-overlay hidden">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Registrar Nuevo Producto</h2>
+        </div>
+        <div class="modal-body">
+            <label>Nombre del Producto</label>
+            <input type="text" id="reg-nombre" placeholder="Ej. Cuaderno Profesional">
+            <label style="margin-top:15px; display:block;">Precio</label>
+            <input type="number" id="reg-precio" placeholder="0.00">
+            <label style="margin-top:15px; display:block;">Existencia Inicial</label>
+            <input type="number" id="reg-stock" placeholder="0">
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="cerrarModalProducto()">Cancelar</button>
+            <button class="btn-confirm" onclick="guardarProductoBD()">Guardar en DB</button>
+        </div>
+    </div>
+</div>
+
     <script src="app.js"></script>
 </body>
 </html>
