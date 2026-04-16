@@ -259,7 +259,7 @@ async function registrarVenta() {
             .insert([{ 
                 id_venta: nuevoIdVenta, // <-- Esto corrige el error de la columna NOT NULL
                 precio_total: totalVenta,
-                curp_cliente: "GOMA000000HDFRRN00", 
+                curp_cliente: "ROJA031120HDFRRJ03", 
                 curp_trabajador: usuarioActual.curp 
             }])
             .select()
