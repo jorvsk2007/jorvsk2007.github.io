@@ -1,0 +1,50 @@
+:root {
+    --primary: #2563eb;
+    --dark: #1e293b;
+    --light: #f8fafc;
+}
+
+body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--light); }
+
+/* HEADER Y NAV FIJOS */
+.main-header {
+    position: fixed; top: 0; width: 100%; height: 60px;
+    background: var(--dark); color: white;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 20px; box-sizing: border-box; z-index: 1000;
+}
+
+.nav-bar {
+    position: fixed; top: 60px; width: 100%; height: 50px;
+    background: #fff; border-bottom: 1px solid #ddd;
+    display: flex; gap: 10px; padding: 5px 20px; z-index: 999;
+}
+
+main { margin-top: 120px; padding: 20px; }
+
+/* MODAL STYLES */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center;
+    z-index: 2000;
+}
+
+.modal-content.large {
+    background: white; width: 80%; max-height: 80%; padding: 25px;
+    border-radius: 8px; overflow-y: auto;
+}
+
+.hidden { display: none !important; }
+
+/* TABLAS */
+table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+th { background: #f1f5f9; }
+
+/* ÁREA DE VENTAS (TICKET) */
+.ventas-container { display: flex; gap: 20px; }
+.ticket-panel { flex: 1; background: white; padding: 20px; border: 1px solid #ccc; }
+.totales-panel {
+    position: fixed; bottom: 20px; right: 20px;
+    background: var(--dark); color: white; padding: 20px; border-radius: 10px;
+}
