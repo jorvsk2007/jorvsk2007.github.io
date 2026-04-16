@@ -2,243 +2,59 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema Papelería - Conexión Supabase</title>
+    <title>Papelería DB - Sistema de Gestión</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <style>
-        body{ font-family: 'Segoe UI', Arial, sans-serif; margin:0; background:#f4f6f8; }
-        header{ background:#e67e22; color:white; padding:15px; text-align:center; }
-        .container{ display:flex; height:100vh; }
-        .sidebar{ width:220px; background:#2c3e50; color:white; padding-top:20px; }
-        .sidebar button{ width:100%; padding:15px; border:none; background:none; color:white; text-align:left; cursor:pointer; font-size:14px; border-bottom: 1px solid #34495e; }
-        .sidebar button:hover{ background:#d35400; }
-        .content{ flex:1; padding:30px; overflow-y: auto; }
-        .section{ display:none; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .section.active{ display:block; }
-        .form-group { margin-bottom: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-        input, select{ padding:10px; border:1px solid #ddd; border-radius: 4px; }
-        button.action{ background:#e67e22; color:white; border:none; padding:12px 20px; cursor:pointer; border-radius:4px; font-weight: bold; margin-top: 10px; }
-        table{ width:100%; margin-top:20px; border-collapse:collapse; }
-        th, td{ border:1px solid #eee; padding:12px; text-align:left; }
-        th{ background:#f8f9fa; color: #7f8c8d; }
-    </style>
 </head>
 <body>
-
-<header>
-    <h1>Gestión de Papelería (Conectado a Supabase)</h1>
-</header>
-
-<div class="container">
-    <div class="sidebar">
-        <button onclick="mostrar('productos')">📦 Productos</button>
-        <button onclick="mostrar('proveedores')">🚚 Proveedores</button>
-        <button onclick="mostrar('trabajadores')">👥 Trabajadores</button>
-        <button onclick="mostrar('ventas')">💰 Ventas</button>
-        <button onclick="mostrar('detalle')">📝 Detalle Venta</button>
-    </div>
-
-    <div class="content">
-        <div id="productos" class="section active">
-            <h2>Gestión de Productos</h2>
-            <div class="form-group">
-                <input id="p_id" placeholder="ID Producto (Ejem: 1)">
-                <input id="p_nombre" placeholder="Nombre">
-                <input id="p_desc" placeholder="Descripción">
-                <input id="p_precio" type="number" placeholder="Precio">
-                <input id="p_stock" type="number" placeholder="Cant. Existencia">
-                <input id="p_prov" placeholder="Matrícula Proveedor (FK)">
+    <header class="main-header">
+        <div class="logo">papeleria_db</div>
+        <div class="user-area" id="user-area">
+            <button onclick="mostrarLogin()" id="btn-login-main">Iniciar Sesión</button>
+            <div id="user-profile" class="hidden">
+                <span id="user-name">Usuario</span>
+                <div class="dropdown">
+                    <button onclick="logout()">Cerrar Sesión</button>
+                </div>
             </div>
-            <button class="action" onclick="guardarProducto()">Guardar Producto</button>
-            <table id="tabla-productos">
-                <thead><tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th></tr></thead>
-                <tbody></tbody>
-            </table>
         </div>
+    </header>
 
-        <div id="trabajadores" class="section">
-            <h2>Gestión de Trabajadores</h2>
-            <div class="form-group">
-                <input id="t_rfc" placeholder="RFC">
-                <input id="t_curp" placeholder="CURP">
-                <input id="t_nombre" placeholder="Nombre">
-                <input id="t_apellidos" placeholder="Apellidos">
-                <input id="t_rol" placeholder="Rol/Puesto">
+    <nav class="nav-bar" id="nav-bar">
+        <button onclick="navegar('ventas')">Ventas</button>
+        <button onclick="navegar('productos')">Productos</button>
+        <button onclick="navegar('inventario')">Inventario</button>
+    </nav>
+
+    <main id="app-content">
+        <div class="welcome-screen">
+            <h1>Bienvenido al Sistema</h1>
+            <p>Por favor, inicie sesión para comenzar.</p>
+        </div>
+    </main>
+
+    <div id="modal-busqueda" class="modal hidden">
+        <div class="modal-content large">
+            <h2>Buscar Producto</h2>
+            <input type="text" id="input-busqueda" placeholder="Escribe nombre del producto..." oninput="buscarProductos(this.value)">
+            <div class="table-container">
+                <table id="tabla-resultados">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="body-resultados"></tbody>
+                </table>
             </div>
-            <button class="action" onclick="guardarTrabajador()">Registrar Trabajador</button>
-            <table id="tabla-trabajadores">
-                <thead><tr><th>RFC</th><th>Nombre</th><th>Rol</th></tr></thead>
-                <tbody></tbody>
-            </table>
+            <button class="btn-close" onclick="cerrarModal()">Cerrar</button>
         </div>
-
-        <div id="proveedores" class="section">
-    <h2>Gestión de Proveedores</h2>
-    <div class="form-group">
-        <input id="prov_mat" placeholder="Matrícula">
-        <input id="prov_nom" placeholder="Nombre">
-        <input id="prov_marca" placeholder="Marca">
-        <input id="prov_tel" placeholder="Teléfono">
     </div>
-    <button class="action" onclick="guardarProveedor()">Guardar Proveedor</button>
-    <table id="tabla-proveedores">
-        <thead><tr><th>Matrícula</th><th>Nombre</th><th>Marca</th><th>Teléfono</th></tr></thead>
-        <tbody></tbody>
-    </table>
-</div>
 
-<div id="ventas" class="section">
-    <h2>Registro de Ventas</h2>
-    <div class="form-group">
-        <input id="v_id" placeholder="ID Venta">
-        <input id="v_total" type="number" placeholder="Total">
-        <input id="v_rfc" placeholder="RFC Trabajador">
-    </div>
-    <button class="action" onclick="guardarVenta()">Registrar Venta</button>
-    <table id="tabla-ventas">
-        <thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Vendedor</th></tr></thead>
-        <tbody></tbody>
-    </table>
-</div>
-
-<div id="detalle" class="section">
-    <h2>Detalle de Venta</h2>
-    <div class="form-group">
-        <input id="d_venta" placeholder="ID Venta">
-        <input id="d_prod" placeholder="ID Producto">
-        <input id="d_cant" type="number" placeholder="Cantidad">
-        <input id="d_sub" type="number" placeholder="Subtotal">
-    </div>
-    <button class="action" onclick="guardarDetalle()">Agregar Detalle</button>
-    <table id="tabla-detalle">
-        <thead><tr><th>ID</th><th>Venta</th><th>Producto</th><th>Cant.</th><th>Subtotal</th></tr></thead>
-        <tbody></tbody>
-    </table>
-</div>
-        
-        </div>
-</div>
-
-<script>
-    // 1. CONFIGURACIÓN DE SUPABASE
-    const SUPABASE_URL = 'https://kxnxjxiwcbypudikbais.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4bnhqeGl3Y2J5cHVkaWtiYWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxOTAwNzUsImV4cCI6MjA4ODc2NjA3NX0.5O7Wlzz3XRRlWky9LNPtu2-xbznBYOmC0lmBWgbArCs';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // 2. NAVEGACIÓN Y CARGA AUTOMÁTICA
-    function mostrar(seccion) {
-        document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-        const seccionActiva = document.getElementById(seccion);
-        if(seccionActiva) {
-            seccionActiva.classList.add("active");
-        }
-
-        const configuracionTablas = {
-            'productos': { tablaBD: 'producto', idHtml: 'tabla-productos', columnas: ['id_producto', 'nombre', 'precio', 'cant_exist'] },
-            'trabajadores': { tablaBD: 'trabajadores', idHtml: 'tabla-trabajadores', columnas: ['rfc', 'nombre', 'apellidos', 'rol'] },
-            'proveedores': { tablaBD: 'provedores', idHtml: 'tabla-proveedores', columnas: ['matricula', 'nombre', 'marca', 'telefono'] },
-            'ventas': { tablaBD: 'ventas', idHtml: 'tabla-ventas', columnas: ['id_venta', 'fecha', 'precio_total', 'rfc_trabajador'] },
-            'detalle': { tablaBD: 'detalle_venta', idHtml: 'tabla-detalle', columnas: ['id_detalle', 'id_venta', 'id_producto', 'cantidad', 'subtotal'] }
-        };
-
-        const config = configuracionTablas[seccion];
-        if (config) {
-            cargarDatos(config.tablaBD, config.idHtml, config.columnas);
-        }
-    }
-
-    // 3. FUNCIONES DE GUARDADO (CRUD - CREATE)
-    async function guardarProducto() {
-        const datos = {
-            id_producto: document.getElementById('p_id').value,
-            nombre: document.getElementById('p_nombre').value,
-            descripcion: document.getElementById('p_desc').value,
-            precio: parseFloat(document.getElementById('p_precio').value),
-            cant_exist: parseInt(document.getElementById('p_stock').value),
-            matricula_proveedor: document.getElementById('p_prov').value
-        };
-        insertarDato('producto', datos, 'productos');
-    }
-
-    async function guardarTrabajador() {
-        const datos = {
-            rfc: document.getElementById('t_rfc').value,
-            curp_tra: document.getElementById('t_curp').value,
-            nombre: document.getElementById('t_nombre').value,
-            apellidos: document.getElementById('t_apellidos').value,
-            rol: document.getElementById('t_rol').value
-        };
-        insertarDato('trabajadores', datos, 'trabajadores');
-    }
-
-    async function guardarProveedor() {
-        const datos = {
-            matricula: document.getElementById('prov_mat').value,
-            nombre: document.getElementById('prov_nom').value,
-            marca: document.getElementById('prov_marca').value,
-            telefono: document.getElementById('prov_tel').value
-        };
-        insertarDato('provedores', datos, 'proveedores');
-    }
-
-    async function guardarVenta() {
-        const datos = {
-            id_venta: document.getElementById('v_id').value,
-            precio_total: parseFloat(document.getElementById('v_total').value),
-            rfc_trabajador: document.getElementById('v_rfc').value
-        };
-        insertarDato('ventas', datos, 'ventas');
-    }
-
-    async function guardarDetalle() {
-        const datos = {
-            id_venta: document.getElementById('d_venta').value,
-            id_producto: document.getElementById('d_prod').value,
-            cantidad: parseInt(document.getElementById('d_cant').value),
-            subtotal: parseFloat(document.getElementById('d_sub').value)
-        };
-        insertarDato('detalle_venta', datos, 'detalle');
-    }
-
-    // Función auxiliar para insertar y refrescar
-    async function insertarDato(tabla, objeto, seccion) {
-        const { error } = await _supabase.from(tabla).insert([objeto]);
-        if (error) {
-            alert("Error: " + error.message);
-        } else {
-            alert("Registro guardado con éxito");
-            limpiarInputs();
-            mostrar(seccion); // Recarga la tabla
-        }
-    }
-
-    // 4. FUNCIONES DE LECTURA (CRUD - READ)
-    async function cargarDatos(nombreTabla, idTablaHtml, columnas) {
-        const { data, error } = await _supabase.from(nombreTabla).select('*');
-        if (error) {
-            console.error("Error:", error.message);
-            return;
-        }
-        const tbody = document.querySelector(`#${idTablaHtml} tbody`);
-        tbody.innerHTML = ""; 
-        data.forEach(fila => {
-            const tr = document.createElement('tr');
-            columnas.forEach(col => {
-                const td = document.createElement('td');
-                td.textContent = fila[col] || '';
-                tr.appendChild(td);
-            });
-            tbody.appendChild(tr);
-        });
-    }
-
-    function limpiarInputs() {
-        document.querySelectorAll('input').forEach(input => input.value = "");
-    }
-
-    // Cargar productos por defecto al iniciar
-    window.onload = () => mostrar('productos');
-</script>
-
+    <script src="app.js"></script>
 </body>
 </html>
