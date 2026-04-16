@@ -453,37 +453,37 @@ function cerrarModalCliente() {
 }
 
 async function filtrarClientes(termino) {
-    // 1. Traemos TODOS los clientes con sus datos de persona
-    // Esto no da error 400 porque no lleva filtros complejos
-    const { data: clientes, error } = await supabaseClient
+    // 1. Traemos a todos los clientes (Consulta limpia, sin error 400)
+    const { data: todosLosClientes, error } = await supabaseClient
         .from('cliente')
         .select('curp, persona(nombre, apellidos)');
 
     if (error) {
-        console.error("Error al obtener clientes:", error);
+        console.error("Error al obtener datos:", error.message);
         return;
     }
 
-    // 2. Si no hay término de búsqueda, mostramos todo
+    // 2. Si el buscador está vacío, mostramos la lista completa
     if (!termino.trim()) {
-        renderizarListaClientes(clientes);
+        renderizarListaClientes(todosLosClientes);
         return;
     }
 
-    // 3. FILTRADO MANUAL EN JAVASCRIPT
-    // Buscamos en CURP, Nombre o Apellidos sin errores de SQL
-    const terminoMinus = termino.toLowerCase();
-    
-    const clientesFiltrados = clientes.filter(c => {
-        const nombre = c.persona?.nombre?.toLowerCase() || "";
-        const apellidos = c.persona?.apellidos?.toLowerCase() || "";
-        const curp = c.curp.toLowerCase();
+    // 3. FILTRADO MANUAL EN JAVASCRIPT (Aquí es donde ocurre la magia)
+    const busqueda = termino.toLowerCase();
 
-        return nombre.includes(terminoMinus) || 
-               apellidos.includes(terminoMinus) || 
-               curp.includes(terminoMinus);
+    const clientesFiltrados = todosLosClientes.filter(c => {
+        // Obtenemos los valores o strings vacíos si son nulos
+        const nombre = (c.persona?.nombre || "").toLowerCase();
+        const apellidos = (c.persona?.apellidos || "").toLowerCase();
+        const curp = (c.curp || "").toLowerCase();
+
+        // Si el término está en el nombre, apellidos o curp, lo incluimos
+        return nombre.includes(busqueda) || 
+               apellidos.includes(busqueda) || 
+               curp.includes(busqueda);
     });
 
-    // 4. Renderizamos el resultado filtrado
+    // 4. Renderizamos los resultados que encontramos
     renderizarListaClientes(clientesFiltrados);
 }
