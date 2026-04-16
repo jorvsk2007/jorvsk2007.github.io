@@ -113,6 +113,24 @@
     </div>
 </div>
 
+    <div id="modal-cliente" class="modal hidden">
+    <div class="modal-content">
+        <h3>Seleccionar Cliente</h3>
+        <input type="text" id="search-cliente" placeholder="Buscar por nombre o CURP..." onkeyup="filtrarClientes(this.value)">
+        <div style="max-height: 300px; overflow-y: auto; margin: 15px 0;">
+            <table style="width: 100%;">
+                <thead>
+                    <tr><th>Nombre</th><th>CURP</th><th>Acción</th></tr>
+                </thead>
+                <tbody id="lista-clientes-body">
+                    </tbody>
+            </table>
+        </div>
+        <button class="btn-cancel" onclick="cerrarModalCliente()">Cancelar</button>
+        <button class="btn-confirm" onclick="seleccionarClienteNull()" style="background: #6c757d;">Venta sin Cliente (Público General)</button>
+    </div>
+</div>
+
     <script src="app.js"></script>
 </body>
 </html>
