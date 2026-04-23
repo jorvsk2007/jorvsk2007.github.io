@@ -1,8 +1,4 @@
-// 1. CONFIGURACIÓN INICIAL
-const URL_SB = 'https://kxnxjxiwcbypudikbais.supabase.co';
-const KEY_SB = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4bnhqeGl3Y2J5cHVkaWtiYWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxOTAwNzUsImV4cCI6MjA4ODc2NjA3NX0.5O7Wlzz3XRRlWky9LNPtu2-xbznBYOmC0lmBWgbArCs';
-
-const supabaseClient = supabase.createClient(URL_SB, KEY_SB);
+const API_URL = "http://localhost:3000/api";
 
 let usuarioActual = null;
 let carrito = [];
@@ -39,50 +35,38 @@ async function ejecutarLogin() {
     const curp = document.getElementById('input-curp').value.trim();
     const errorMsg = document.getElementById('login-error-msg');
     
-    console.log("Intentando login con CURP:", curp); // Esto sale en F12
-
     try {
-        const { data, error } = await supabaseClient
-            .from('trabajadores') // <-- En minúsculas
-            .select('curp, rol, persona(nombre, apellidos)') // <-- En minúsculas
-            .eq('curp', curp)
-            .maybeSingle();
+        // Ahora enviamos la CURP al servidor, no a Supabase directamente
+        const respuesta = await fetch(`${API_URL}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ curp })
+        });
 
-        if (error) {
-            alert("Error de Supabase: " + error.message);
-            console.error(error);
+        const data = await respuesta.json();
+
+        if (!respuesta.ok) {
+            errorMsg.classList.remove('hidden');
+            alert(data.error || "Error en el login");
             return;
         }
 
         if (data) {
-            console.log("Datos encontrados:", data);
             usuarioActual = data;
-            
-            // Forzamos la actualización visual
             document.getElementById('modal-login').classList.add('hidden');
             document.getElementById('btn-login-trigger').classList.add('hidden');
             document.getElementById('user-profile').classList.remove('hidden');
             document.getElementById('main-nav').classList.remove('hidden');
             
-            // Verificamos si PERSONA existe en el objeto devuelto
             const nombreCompleto = data.persona ? data.persona.nombre : "Usuario"; 
             document.getElementById('user-display-name').innerText = `${data.rol}: ${nombreCompleto}`;
             
-           const rol = usuarioActual.rol.toLowerCase();
-
-            if (rol === 'almacenista') {
-                irAProductos(); // Los mandamos directo a ver productos
-            } else {
-                irAVentas(); // Admin y Cajeros a Ventas
-            }
+            const rol = usuarioActual.rol.toLowerCase();
+            if (rol === 'almacenista') irAProductos(); else irAVentas();
             alert("¡Bienvenido " + nombreCompleto + "!");
-        } else {
-            // Si llega aquí, es que la consulta corrió pero no encontró la CURP
-            errorMsg.classList.remove('hidden');
-            alert("La CURP no existe en la tabla TRABAJADORES");
         }
     } catch (e) {
-        alert("Error crítico en el script: " + e.message);
+        alert("Error conectando al servidor: " + e.message);
     }
 }
 
@@ -165,34 +149,35 @@ function irAVentas() {
 
 async function irAProductos() {
     const main = document.getElementById('main-content');
-    const { data, error } = await supabaseClient.from('producto').select('*');
     
-    // Verificamos el rol para mostrar el botón
-    const rol = usuarioActual.rol.toLowerCase();
-    const puedeAgregar = (rol === 'admin' || rol === 'almacenista');
+    try {
+        const respuesta = await fetch(`${API_URL}/productos`);
+        const data = await respuesta.json();
 
-    main.innerHTML = `
-        <div style="background:white; padding:30px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
-                <h2 style="margin:0; font-size:32px;">Inventario General</h2>
-                ${puedeAgregar ? `<button class="btn-confirm" onclick="abrirModalProducto()" style="background:var(--accent);">+ Nuevo Producto</button>` : ''}
+        const rol = usuarioActual.rol.toLowerCase();
+        const puedeAgregar = (rol === 'admin' || rol === 'almacenista');
+
+        main.innerHTML = `
+            <div style="background:white; padding:30px; border-radius:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+                    <h2 style="margin:0;">Inventario General</h2>
+                    ${puedeAgregar ? `<button class="btn-confirm" onclick="abrirModalProducto()">+ Nuevo Producto</button>` : ''}
+                </div>
+                <table style="width:100%; text-align:left;">
+                    <thead><tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th></tr></thead>
+                    <tbody>
+                        ${data.map(p => `
+                            <tr>
+                                <td>${p.id_producto}</td>
+                                <td>${p.nombre}</td>
+                                <td>$${p.precio.toFixed(2)}</td>
+                                <td>${p.cant_exist}</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>
             </div>
-            <table style="width:100%; text-align:left; font-size:18px;">
-                <thead style="background:#f8fafc;">
-                    <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th></tr>
-                </thead>
-                <tbody>
-                    ${data.map(p => `
-                        <tr style="border-bottom:1px solid #eee;">
-                            <td style="padding:15px;">${p.id_producto}</td>
-                            <td>${p.nombre}</td>
-                            <td>$${p.precio.toFixed(2)}</td>
-                            <td>${p.cant_exist}</td>
-                        </tr>`).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
+        `;
+    } catch (e) { console.error("Error al cargar productos", e); }
 }
 
 // 5. LÓGICA DE VENTA (EL TICKET)
@@ -261,50 +246,34 @@ function actualizarVistaTicket() {
 async function registrarVenta() {
     if (carrito.length === 0) return alert("El ticket está vacío.");
 
-    // Generamos un ID con el formato de tu tabla: VTA-2026-XXX
-    const randomNum = Math.floor(Math.random() * 999).toString().padStart(3, '0');
-    const nuevoIdVenta = `VTA-2026-${randomNum}`;
-
     try {
         const totalVenta = parseFloat(document.getElementById('display-total').innerText.replace('$', ''));
-
-        // 1. Insertar en 'ventas' incluyendo el id_venta manual
-            const { data: venta, error: errorVenta } = await supabaseClient
-            .from('ventas')
-            .insert([{ 
-                id_venta: nuevoIdVenta,
-                precio_total: totalVenta,
-                curp_cliente: clienteSeleccionado, // Si es null, Supabase lo aceptará ahora
-                curp_trabajador: usuarioActual.curp 
-            }])
-            .select()
-            .single();
-
-        if (errorVenta) throw errorVenta;
-
-        // 2. Descontar existencias
-        for (const item of carrito) {
-            const { data: prod } = await supabaseClient
-                .from('producto')
-                .select('cant_exist')
-                .eq('id_producto', item.id)
-                .single();
-
-            await supabaseClient
-                .from('producto')
-                .update({ cant_exist: prod.cant_exist - item.cantidad })
-                .eq('id_producto', item.id);
-        }
-
-        totalVentaAnterior = totalVenta;
-        alert("Venta registrada con éxito: " + nuevoIdVenta);
         
-        carrito = [];
-        irAVentas();
+        const ventaData = {
+            precio_total: totalVenta,
+            curp_cliente: clienteSeleccionado,
+            curp_trabajador: usuarioActual.curp,
+            detalles: carrito // Enviamos el carrito completo para que el backend procese el stock
+        };
 
+        const respuesta = await fetch(`${API_URL}/ventas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(ventaData)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (respuesta.ok) {
+            alert("Venta registrada con éxito: " + resultado.id_venta);
+            totalVentaAnterior = totalVenta;
+            carrito = [];
+            irAVentas();
+        } else {
+            throw new Error(resultado.error);
+        }
     } catch (err) {
-        console.error("Error completo:", err);
-        alert("No se pudo registrar: " + (err.message || "Error de servidor"));
+        alert("No se pudo registrar: " + err.message);
     }
 }
 
